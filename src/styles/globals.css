@@ -1,0 +1,6 @@
+@import "tailwindcss/preflight";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
+
+/* app global styles */
+body { background-color: white; }
