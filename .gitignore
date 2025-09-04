@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.DS_Store
+*.log
+*.pid
+coverage/
+*.local
+vite-env.d.ts
+*.cache
+*.swp
+*.tmp
+.env*node_modules

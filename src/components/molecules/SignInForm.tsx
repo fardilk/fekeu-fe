@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -26,9 +26,17 @@ export const SignInForm: React.FC<{ onSubmit?: (data: SignInValues) => Promise<v
   });
   const setUser = useAuthStore((s: AuthState) => s.setUser);
   const setToken = useAuthStore((s: AuthState) => s.setToken);
+  const token = useAuthStore((s: AuthState) => s.token);
   const navigate = useNavigate();
 
     const toast = useToast();
+
+    useEffect(() => {
+      if (token) {
+        // Extra safety: if already logged in, push home
+        navigate('/');
+      }
+    }, [token, navigate]);
 
     const submit = async (data: SignInValues) => {
       try {
@@ -39,15 +47,15 @@ export const SignInForm: React.FC<{ onSubmit?: (data: SignInValues) => Promise<v
       const user = { id: data.username, name: data.username };
       setUser(user as any);
   setToken(res.token);
-      if (data.remember) {
+      console.debug('[Login] token set to store length=', res.token?.length, ' user=', user);
+      // Always persist token & user so session survives hard reload (Ctrl+Shift+R)
+      try {
         localStorage.setItem('auth.token', res.token);
         localStorage.setItem('auth.user', JSON.stringify(user));
-      } else {
-        localStorage.removeItem('auth.token');
-        localStorage.removeItem('auth.user');
-      }
+      } catch (_) { /* ignore quota */ }
         toast.showToast('Login Berhasil', 'success');
-        navigate('/');
+  console.debug('[Login] navigating to / (immediate)');
+  navigate('/');
     } catch (e: any) {
       console.error('Login failed', e);
         toast.showToast('Login Gagal, Periksa Kembali Akun Anda', 'error');

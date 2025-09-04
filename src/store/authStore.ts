@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { User } from '../types/user';
 import { setAuthToken } from '../lib/axio';
+import { decodeJwt, isExpired } from '../lib/authToken';
 
 export type AuthState = {
   user: User | null;
@@ -16,9 +17,19 @@ export type AuthState = {
 let initialToken: string | null = null;
 let initialUser: User | null = null;
 try {
-  initialToken = localStorage.getItem('auth.token');
+  const stored = localStorage.getItem('auth.token');
   const raw = localStorage.getItem('auth.user');
   if (raw) initialUser = JSON.parse(raw) as User;
+
+  // Validate persisted token: must decode and not be expired. If invalid, remove it.
+  if (stored) {
+    // Accept tokens without exp (treat as non-expiring). Only remove if explicitly expired.
+    if (isExpired(stored)) {
+      try { localStorage.removeItem('auth.token'); localStorage.removeItem('auth.user'); } catch (_) {}
+    } else {
+      initialToken = stored;
+    }
+  }
 } catch (_) { /* ignore */ }
 
 // ensure axios has token header if available

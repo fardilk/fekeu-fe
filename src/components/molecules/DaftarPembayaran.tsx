@@ -1,5 +1,7 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import ViewSwitcher from '../atoms/ViewSwitcher';
+import { getCatatanList } from '../../lib/api/keuangan';
+import { useAuthStore } from '../../store/authStore';
 
 
 type Props = {
@@ -10,18 +12,36 @@ type Props = {
 
 export const DaftarPembayaran: React.FC<Props> = ({ startDate, endDate, variant = 'default' }) => {
   const [filterMonth, setFilterMonth] = useState<string>('');
+  const [rows, setRows] = useState<any[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  const token = useAuthStore(s => s.token);
 
-  const mockRows = useMemo(() => ([
-    { id: 1, created_at: '2025-08-28T12:34:00', kategori: 'Invoice A', nominal: 120000 },
-    { id: 2, created_at: '2025-08-27T09:20:00', kategori: 'Invoice B', nominal: 55000 },
-    { id: 3, created_at: '2025-08-25T15:10:00', kategori: 'Receipt C', nominal: 75000 },
-  ]), []);
+  const load = useCallback(async () => {
+    if (!token) return; // guard – ProtectedRoute should ensure token exists
+    setLoading(true); setError(null);
+    try {
+      const data = await getCatatanList();
+      setRows(Array.isArray(data) ? data : []);
+    } catch (e: any) {
+      setError(e?.message || 'Gagal memuat data');
+    } finally {
+      setLoading(false);
+    }
+  }, [token]);
 
-  const months = useMemo(() => ['2025-08', '2025-07'], []);
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const months = useMemo(() => {
+    const mset = new Set<string>();
+    rows.forEach(r => { if (r.created_at) mset.add(String(r.created_at).slice(0,7)); });
+    return Array.from(mset).sort().reverse();
+  }, [rows]);
 
   const filtered = useMemo(() => {
-    if (!mockRows) return [] as any[];
-    return mockRows.filter(it => {
+    return rows.filter(it => {
       if (filterMonth) return it.created_at && it.created_at.startsWith(filterMonth);
       if (startDate || endDate) {
         const d = it.created_at ? new Date(it.created_at) : null;
@@ -30,7 +50,7 @@ export const DaftarPembayaran: React.FC<Props> = ({ startDate, endDate, variant 
       }
       return true;
     }).sort((a,b)=> (b.created_at||'').localeCompare(a.created_at||''));
-  }, [mockRows, filterMonth, startDate, endDate]);
+  }, [rows, filterMonth, startDate, endDate]);
 
   // use a soft teal background for the 'solid' variant (not black) and darker teal text for readability
   // use a stronger drop shadow for the solid variant to make it pop
@@ -63,13 +83,18 @@ export const DaftarPembayaran: React.FC<Props> = ({ startDate, endDate, variant 
       <div className="flex items-center justify-between mb-3">
         <div className={`text-sm ${variant === 'solid' ? 'text-teal-700' : 'text-slate-500'}`}>Daftar Pembayaran</div>
         <div className="flex items-center gap-2">
-          {/* ViewSwitcher used as month filter here for reuse */}
           <ViewSwitcher
-            options={[{ value: '', label: 'Filter by month' }, ...months.map(m => ({ value: m, label: m }))]}
+            options={[{ value: '', label: 'Semua Bulan' }, ...months.map(m => ({ value: m, label: m }))]}
             value={filterMonth}
             onChange={(v: string) => setFilterMonth(v)}
             variant={variant === 'solid' ? 'solid' : 'default'}
           />
+          <button
+            type="button"
+            onClick={() => load()}
+            disabled={loading}
+            className={`text-xs px-2 py-1 rounded border ${loading ? 'opacity-50' : 'hover:bg-teal-50'} ${variant === 'solid' ? 'border-teal-300 text-teal-700' : 'border-slate-300 text-slate-600'}`}
+          >{loading ? 'Memuat...' : 'Refresh'}</button>
         </div>
       </div>
 
@@ -82,8 +107,16 @@ export const DaftarPembayaran: React.FC<Props> = ({ startDate, endDate, variant 
             </tr>
           </thead>
           <tbody>
-            {filtered.length === 0 && <tr><td colSpan={2} className={`p-3 ${variant === 'solid' ? 'text-teal-700' : 'text-slate-500'}`}>No records</td></tr>}
-            {filtered.map(it => (
+            {error && (
+              <tr><td colSpan={2} className="p-3 text-red-600 text-xs">{error}</td></tr>
+            )}
+            {!error && loading && (
+              <tr><td colSpan={2} className="p-3 text-xs text-slate-500">Memuat data...</td></tr>
+            )}
+            {!error && !loading && filtered.length === 0 && (
+              <tr><td colSpan={2} className={`p-3 ${variant === 'solid' ? 'text-teal-700' : 'text-slate-500'}`}>Tidak ada data</td></tr>
+            )}
+            {!error && filtered.map(it => (
               <tr key={it.id} className="border-t">
                 <td className="p-2 align-top">{fmtDateIndo(it.created_at)}</td>
                 <td className="p-2 text-right">{fmtRupiah(it.nominal)}</td>

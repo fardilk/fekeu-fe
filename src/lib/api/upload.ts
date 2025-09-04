@@ -1,4 +1,5 @@
-import axios, { AxiosProgressEvent } from 'axios';
+import axios, { AxiosRequestConfig, type AxiosProgressEvent } from 'axios';
+import { useAuthStore } from '../../store/authStore';
 
 export type UploadResponse = {
 	id: string;
@@ -21,24 +22,36 @@ export async function uploadReceipt(
 	form.append('file', file);
 
 	try {
-		const res = await axios.post<UploadResponse>('http://localhost:8080/uploads', form, {
-			headers: {
-				Authorization: `Bearer ${accessToken}`,
-				// let the browser set Content-Type with boundary
+    const base = (import.meta as any).env?.VITE_UPLOAD_API_URL || 'http://localhost:8081';
+    const url = base.replace(/\/?$/,'') + '/uploads';
+    const headers: Record<string,string> = {};
+    if (accessToken) headers['Authorization'] = `Bearer ${accessToken}`; // optional override; otherwise interceptor handles
+
+		const config: AxiosRequestConfig = {
+			headers,
+			// Send cookies so HttpOnly refresh token remains attached (backend suggestion).
+			withCredentials: true,
+			onUploadProgress: (ev?: AxiosProgressEvent) => {
+				try {
+					if (ev && typeof ev.loaded === 'number' && typeof ev.total === 'number' && onProgress) {
+						const percent = Math.round((ev.loaded * 100) / ev.total);
+						onProgress(percent);
+					}
+				} catch (_) {}
 			},
-					onUploadProgress: (ev?: AxiosProgressEvent) => {
-						try {
-							if (ev && typeof ev.loaded === 'number' && typeof ev.total === 'number' && onProgress) {
-								const percent = Math.round((ev.loaded * 100) / ev.total);
-								onProgress(percent);
-							}
-						} catch (_) {}
-					},
-		});
+		};
+
+		// Standalone request: ONLY hits /uploads; no interceptors => no /refresh or other endpoints.
+		const res = await axios.post<UploadResponse>(url, form, config);
 
 		return res.data;
 	} catch (err: any) {
-		// normalize common axios/server errors into a thrown Error with message
+		if (err?.response?.status === 401) {
+			// Centralize unauthorized handling: clear auth + redirect to login.
+			try { (useAuthStore.getState() as any).logout?.(); } catch (_) {}
+			try { window.location.href = '/login'; } catch (_) {}
+			throw new Error('Unauthorized: token invalid or expired. Silakan login kembali.');
+		}
 		if (err.response && err.response.data && err.response.data.error) {
 			throw new Error(err.response.data.error);
 		}
@@ -49,16 +62,4 @@ export async function uploadReceipt(
 
 export default uploadReceipt;
 
-export async function finalizeUpload(id: string, accessToken: string): Promise<any> {
-	try {
-		const res = await axios.post(`http://localhost:8080/uploads/${id}/submit`, {}, {
-			headers: {
-				Authorization: `Bearer ${accessToken}`,
-			},
-		});
-		return res.data;
-	} catch (err: any) {
-		if (err.response && err.response.data && err.response.data.error) throw new Error(err.response.data.error);
-		throw new Error(err.message || 'Finalize failed');
-	}
-}
+// finalizeUpload removed per new flow (single direct upload on submit)
