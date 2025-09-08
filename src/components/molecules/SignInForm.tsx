@@ -41,16 +41,18 @@ export const SignInForm: React.FC<{ onSubmit?: (data: SignInValues) => Promise<v
     const submit = async (data: SignInValues) => {
       try {
         if (onSubmit) await onSubmit(data);
-      const res = await login({ username: data.username, password: data.password });
-  setAuthToken(res.token);
+  const res = await login({ username: data.username, password: data.password });
+  const tok = res.token as unknown as string;
+  if (!tok) throw new Error('Token missing from login response');
+  setAuthToken(tok);
       // Backend didn't return user object; derive minimal user from form input.
       const user = { id: data.username, name: data.username };
       setUser(user as any);
-  setToken(res.token);
-      console.debug('[Login] token set to store length=', res.token?.length, ' user=', user);
+  setToken(tok);
+  console.debug('[Login] token set to store length=', tok?.length, ' user=', user);
       // Always persist token & user so session survives hard reload (Ctrl+Shift+R)
       try {
-        localStorage.setItem('auth.token', res.token);
+  localStorage.setItem('auth.token', tok);
         localStorage.setItem('auth.user', JSON.stringify(user));
       } catch (_) { /* ignore quota */ }
         toast.showToast('Login Berhasil', 'success');

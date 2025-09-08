@@ -116,8 +116,8 @@ export const DaftarPembayaran: React.FC<Props> = ({ startDate, endDate, variant 
             {!error && !loading && filtered.length === 0 && (
               <tr><td colSpan={2} className={`p-3 ${variant === 'solid' ? 'text-teal-700' : 'text-slate-500'}`}>Tidak ada data</td></tr>
             )}
-            {!error && filtered.map(it => (
-              <tr key={it.id} className="border-t">
+            {!error && filtered.map((it, idx) => (
+              <tr key={`${it?.id ?? 'noid'}-${it?.created_at ?? 'nodate'}-${idx}`} className="border-t">
                 <td className="p-2 align-top">{fmtDateIndo(it.created_at)}</td>
                 <td className="p-2 text-right">{fmtRupiah(it.nominal)}</td>
               </tr>

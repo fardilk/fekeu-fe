@@ -5,7 +5,19 @@ nohup: ignoring input
 
 [33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
 
-  VITE v5.4.19  ready in 435 ms
+  VITE v5.4.19  ready in 454 ms
 
   ➜  Local:   http://localhost:5173/
   ➜  Network: use --host to expose
+1:00:04 PM [vite] hmr update /src/components/molecules/SignInForm.tsx, /src/index.css, /src/components/molecules/DaftarPembayaran.tsx
+1:00:11 PM [vite] hmr update /src/components/molecules/SignInForm.tsx, /src/index.css
+1:02:09 PM [vite] hmr update /src/components/molecules/SignInForm.tsx, /src/index.css
+1:02:09 PM [vite] hmr update /src/components/molecules/SignInForm.tsx, /src/index.css, /src/components/molecules/DaftarPembayaran.tsx
+2:38:13 PM [vite] hmr update /src/components/molecules/UploadReceiptForm.tsx, /src/index.css
+2:40:10 PM [vite] hmr update /src/components/molecules/UploadReceiptForm.tsx, /src/index.css
+2:42:46 PM [vite] hmr update /src/components/molecules/DaftarPembayaran.tsx, /src/index.css
+2:43:30 PM [vite] hmr update /src/components/molecules/DaftarPembayaran.tsx, /src/index.css
+2:47:28 PM [vite] hmr update /src/components/molecules/UploadReceiptForm.tsx, /src/index.css
+2:48:29 PM [vite] hmr update /src/components/molecules/UploadReceiptForm.tsx, /src/index.css
+2:52:54 PM [vite] hmr update /src/components/molecules/UploadReceiptForm.tsx, /src/index.css
+2:53:23 PM [vite] hmr update /src/components/molecules/UploadReceiptForm.tsx, /src/index.css

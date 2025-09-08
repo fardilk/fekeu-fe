@@ -17,15 +17,26 @@ export async function uploadReceipt(
 	file: File,
 	accessToken: string,
 	onProgress?: (percent: number) => void,
+    folder?: string,
 ): Promise<UploadResponse> {
 	const form = new FormData();
+	// Backend expects the file field to be named "file"
 	form.append('file', file);
+	// Optional: include folder only when explicitly provided
+	if (folder) form.append('folder', folder);
 
 	try {
-    const base = (import.meta as any).env?.VITE_UPLOAD_API_URL || 'http://localhost:8081';
-    const url = base.replace(/\/?$/,'') + '/uploads';
-    const headers: Record<string,string> = {};
-    if (accessToken) headers['Authorization'] = `Bearer ${accessToken}`; // optional override; otherwise interceptor handles
+	const base = (import.meta as any).env?.VITE_UPLOAD_API_URL || 'http://127.0.0.1:8081';
+	const url = base.replace(/\/?$/,'') + '/uploads';
+		const headers: Record<string,string> = {};
+		// prefer explicit param, fallback to in-memory store token
+		let token = accessToken || '';
+		try {
+			if (!token && (useAuthStore as any).getState) {
+				token = (useAuthStore as any).getState().token || '';
+			}
+		} catch (_) { token = token || ''; }
+		if (token) headers['Authorization'] = `Bearer ${token}`;
 
 		const config: AxiosRequestConfig = {
 			headers,

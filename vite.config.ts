@@ -10,6 +10,10 @@ export default defineConfig({
     },
   },
   server: {
+    // Force preferred dev port & auto-open root (protected dashboard).
+    // If user lacks JWT, ProtectedRoute redirects to /login.
+    port: 5173,
+    open: '/',
     proxy: {
       '/api': {
         target: 'http://localhost:8000',
@@ -26,7 +30,7 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
       },
-  // NOTE: Removed '/login', '/dashboard', '/me' proxies so SPA routes resolve to index.html.
+      // NOTE: Removed '/login', '/dashboard', '/me' proxies so SPA routes resolve to index.html.
     }
   },
   build: {

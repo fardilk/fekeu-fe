@@ -31,8 +31,15 @@ export const UploadReceiptForm: React.FC<Props> = ({ onUpload, maxSizeMB = 1, ac
     result?: UploadResponse | null;
   };
 
-  const [items, setItems] = useState<QItem[]>(cacheFile ? [{ id: String(Date.now()), file: cacheFile, status: 'pending', progress: null, error: null, result: null }] : []);
+  const [items, setItems] = useState<QItem[]>([]);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (cacheFile && items.length === 0) {
+      setItems([{ id: String(Date.now()), file: cacheFile, status: 'pending', progress: null, error: null, result: null }]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cacheFile]);
   const [cached, setCached] = useState<boolean>(false); // simulate cached/uploaded state (legacy)
   const [uploading, setUploading] = useState(false);
   const lastProgressEmitRef = useRef<Record<string, number>>({});
