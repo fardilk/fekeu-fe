@@ -32,6 +32,23 @@ export function getCatatanList() {
   return get<CatatanItem[]>('/catatan');
 }
 
+// Try to fetch a server-provided total first; if not available, fall back to fetching list and summing.
+export async function getCatatanTotal(): Promise<number> {
+  try {
+    // server may expose /catatan/total returning { total: number }
+    const res = await axios.get((import.meta as any).env?.VITE_UPLOAD_API_URL ? String((import.meta as any).env.VITE_UPLOAD_API_URL).replace(/\/$/, '') + '/catatan/total' : '/catatan/total', { withCredentials: true });
+    const data: any = res.data;
+    if (typeof data === 'object' && (typeof data.total === 'number' || typeof data.total === 'string')) {
+      return Number(data.total) || 0;
+    }
+  } catch (e) {
+    // ignore and fallback to list
+  }
+
+  const list = await getCatatanList();
+  return (list || []).reduce((s, it: any) => s + Number(it.Amount ?? it.amount ?? it.nominal ?? 0), 0);
+}
+
 export function getCatatan(id: number|string) {
   return get<CatatanItem>(`/catatan/${id}`);
 }

@@ -36,20 +36,29 @@ export const DaftarPembayaran: React.FC<Props> = ({ startDate, endDate, variant 
 
   const months = useMemo(() => {
     const mset = new Set<string>();
-    rows.forEach(r => { if (r.created_at) mset.add(String(r.created_at).slice(0,7)); });
+    const pickDate = (r: any): string | null => {
+      // API may return Date, created_at, createdAt, date, or tanggal
+      const d = r?.Date ?? r?.created_at ?? r?.createdAt ?? r?.date ?? r?.tanggal ?? null;
+      return d ? String(d) : null;
+    };
+    rows.forEach(r => { const ds = pickDate(r); if (ds) mset.add(ds.slice(0,7)); });
     return Array.from(mset).sort().reverse();
   }, [rows]);
 
   const filtered = useMemo(() => {
-    return rows.filter(it => {
-      if (filterMonth) return it.created_at && it.created_at.startsWith(filterMonth);
-      if (startDate || endDate) {
-        const d = it.created_at ? new Date(it.created_at) : null;
-        if (startDate && d && d < new Date(startDate)) return false;
-        if (endDate && d && d > new Date(endDate)) return false;
-      }
-      return true;
-    }).sort((a,b)=> (b.created_at||'').localeCompare(a.created_at||''));
+  const getDateStr = (it: any) => String(it?.Date ?? it?.created_at ?? it?.createdAt ?? it?.date ?? it?.tanggal ?? '');
+    return rows
+      .filter(it => {
+        const ds = getDateStr(it);
+        if (filterMonth) return ds && ds.startsWith(filterMonth);
+        if (startDate || endDate) {
+          const d = ds ? new Date(ds) : null;
+          if (startDate && d && d < new Date(startDate)) return false;
+          if (endDate && d && d > new Date(endDate)) return false;
+        }
+        return true;
+      })
+      .sort((a,b)=> getDateStr(b).localeCompare(getDateStr(a)));
   }, [rows, filterMonth, startDate, endDate]);
 
   // use a soft teal background for the 'solid' variant (not black) and darker teal text for readability
@@ -59,7 +68,7 @@ export const DaftarPembayaran: React.FC<Props> = ({ startDate, endDate, variant 
 
   const fmtRupiah = (n?: number) => {
     const v = Number(n ?? 0);
-    return 'R. ' + new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v);
+    return 'IDR. ' + new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v);
   };
 
   const fmtDateIndo = (iso?: string) => {
@@ -75,6 +84,24 @@ export const DaftarPembayaran: React.FC<Props> = ({ startDate, endDate, variant 
       return iso.slice(0, 10).replace(/-/g, '-');
     }
   };
+
+  const displayDate = (iso?: string) => {
+  // Keep the human-friendly Indonesian date (weekday + dd-mm-yyyy) so tests
+  // and UIs that expect the dd-mm-yyyy fragment still find it.
+  return fmtDateIndo(iso);
+  };
+
+  const toIsoDate = (iso?: string) => {
+    if (!iso) return '-';
+    try {
+      return new Date(iso).toISOString().slice(0, 10);
+    } catch (_) {
+      return String(iso).slice(0, 10);
+    }
+  };
+
+  const getAmount = (it: any): number => Number(it?.nominal ?? it?.amount ?? it?.Amount ?? 0);
+  const getDate = (it: any): string => String(it?.Date ?? it?.created_at ?? it?.createdAt ?? it?.date ?? it?.tanggal ?? '');
 
   const tealShadowStyle: React.CSSProperties = { boxShadow: '0 18px 60px rgba(20,184,166,0.18)', backdropFilter: 'blur(6px)' };
 
@@ -116,12 +143,20 @@ export const DaftarPembayaran: React.FC<Props> = ({ startDate, endDate, variant 
             {!error && !loading && filtered.length === 0 && (
               <tr><td colSpan={2} className={`p-3 ${variant === 'solid' ? 'text-teal-700' : 'text-slate-500'}`}>Tidak ada data</td></tr>
             )}
-            {!error && filtered.map((it, idx) => (
-              <tr key={`${it?.id ?? 'noid'}-${it?.created_at ?? 'nodate'}-${idx}`} className="border-t">
-                <td className="p-2 align-top">{fmtDateIndo(it.created_at)}</td>
-                <td className="p-2 text-right">{fmtRupiah(it.nominal)}</td>
-              </tr>
-            ))}
+            {!error && filtered.map((it, idx) => {
+              const kId = it?.id ?? it?.ID ?? 'noid';
+              const dStr = getDate(it);
+              const amt = getAmount(it);
+              return (
+                <tr key={`${kId}-${dStr}-${idx}`} className="border-t">
+                  <td className="p-2 align-top">
+                    <div>{displayDate(dStr)}</div>
+                    <div className="text-[11px] text-slate-400 mt-1 font-mono">{toIsoDate(dStr)}</div>
+                  </td>
+                  <td className="p-2 text-right">{fmtRupiah(amt)}</td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

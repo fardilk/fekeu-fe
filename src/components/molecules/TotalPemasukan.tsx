@@ -1,18 +1,24 @@
 import React from 'react';
+import { useCatatan } from '../../hooks/useCatatan';
 
 type Props = {
-  startDate?: string; // ISO date
-  endDate?: string; // ISO date
+  startDate?: string; // ISO date (not yet used)
+  endDate?: string; // ISO date (not yet used)
   variant?: 'default' | 'soft' | 'solid';
 };
 
 export const TotalPemasukan: React.FC<Props> = ({ startDate, endDate, variant = 'default' }) => {
-  // Mock total for mockup/demo purposes
-  const total = 12345000;
+  const items = useCatatan();
+
+  // Sum flexibly: backend may return Amount, amount, or nominal
+  const total = (items || []).reduce((acc, it: any) => {
+    const val = (it && (it.Amount ?? it.amount ?? it.nominal ?? 0)) || 0;
+    return acc + Number(val || 0);
+  }, 0);
 
   const fmt = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 });
 
-  // use a fixed height ~8rem (8em) so the card fits larger content
+  // use a fixed height ~8rem so the card fits larger content
   const containerClass = variant === 'solid'
     ? 'h-32 px-4 py-4 bg-teal-600 rounded shadow-lg flex items-center'
     : variant === 'soft'
@@ -24,14 +30,17 @@ export const TotalPemasukan: React.FC<Props> = ({ startDate, endDate, variant = 
 
   return (
     <div className={containerClass}>
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between w-full">
         <div>
           <div className={titleClassSolid}>Total Pemasukan</div>
-          <div className={valueClass}>{fmt.format(total)}</div>
+          <div className={valueClass}>{items ? fmt.format(total) : 'Loading...'}</div>
         </div>
+        {/* optional small info */}
+        <div className="text-xs text-slate-400 hidden sm:block">{items ? `${items.length} item(s)` : ''}</div>
       </div>
     </div>
   );
 };
 
 export default TotalPemasukan;
+

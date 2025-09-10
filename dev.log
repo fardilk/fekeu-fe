@@ -1,10 +1,19 @@
+nohup: ignoring input
 
 > fekeu@0.1.0 dev
-> vite
+> vite --port 5173
 
 [33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
 
-  VITE v5.4.19  ready in 453 ms
+  VITE v5.4.19  ready in 182 ms
 
   ➜  Local:   http://localhost:5173/
   ➜  Network: use --host to expose
+8:28:21 AM [vite] hmr update /src/components/molecules/DaftarPembayaran.tsx, /src/index.css
+8:29:40 AM [vite] page reload package.json
+8:29:57 AM [vite] hmr update /src/components/molecules/DaftarPembayaran.tsx, /src/index.css
+8:31:52 AM [vite] hmr update /src/components/molecules/DaftarPembayaran.tsx, /src/index.css
+8:32:25 AM [vite] hmr update /src/components/molecules/DaftarPembayaran.tsx, /src/index.css
+8:35:45 AM [vite] hmr update /src/components/molecules/DaftarPembayaran.tsx, /src/index.css
+8:36:20 AM [vite] hmr update /src/components/molecules/DaftarPembayaran.tsx, /src/index.css
+8:36:52 AM [vite] hmr update /src/components/molecules/DaftarPembayaran.tsx, /src/index.css

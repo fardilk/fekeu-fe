@@ -170,14 +170,14 @@ export const UploadReceiptForm: React.FC<Props> = ({ onUpload, maxSizeMB = 1, ac
       setGlobalUploading(true);
       setItems((prev) => prev.map((x) => x.id === id ? { ...x, status: 'uploading', progress: 0 } : x));
 
-      const result = await uploadReceipt(it.file, authToken ?? '', (p) => {
+  const result = await uploadReceipt(it.file, authToken ?? '', (p) => {
         const now = performance.now();
         const last = lastProgressEmitRef.current[id] || 0;
         if (now - last > 80 || p === 100) {
           setItems((prev) => prev.map((x) => x.id === id ? { ...x, progress: p } : x));
           lastProgressEmitRef.current[id] = now;
         }
-      });
+  }, undefined, undefined, { retryUntilSuccess: true, retryDelayMs: 2000 });
 
       // success -> remove item from queue so user can start again
       try {
